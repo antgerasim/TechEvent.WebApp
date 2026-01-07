@@ -1,0 +1,41 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userprefs
+*.csproj.user
+*.dbmdl
+*.jfm
+*.pfx
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Rr]elease/
+[Dd]ebug/
+bld/
+*.exe
+*.dll
+*.pdb
+*.tmp
+*.log
+
+# NuGet packages
+packages/
+*.nupkg
+
+# IDE-specific files
+_ReSharper*/
+*.DotSettings.user
+
+# Blazor WebAssembly
+wwwroot/bundle/
+
+# Other
+web.config
+TestResult.xml
+Generated\ Files/
+node_modules/
+
+# VS Code
+.vscode/

@@ -1,0 +1,51 @@
+@page "/schedule"
+@using TechEvent.WebApp.Models
+@using TechEvent.WebApp.Services
+@inject ScheduleService ScheduleService
+@rendermode InteractiveServer
+
+<h1>Event Schedule</h1>
+
+<div class="filter-container">
+    <input @oninput="OnFilterInput" placeholder="Filter by category..." />
+</div>
+
+<div class="schedule-container">
+    @if (filteredTalks.Count == 0)
+    {
+        <p>No talks found for the selected category.</p>
+    }
+    else
+    {
+        @foreach (var talk in filteredTalks)
+        {
+            <TalkCard Talk="talk" />
+            @if (talk.StartTime.Hour == 12)
+            {
+                <div class="talk-card break">
+                    <div class="talk-time">13:20 - 14:20</div>
+                    <div class="talk-details">
+                        <h3>Lunch Break</h3>
+                    </div>
+                </div>
+            }
+        }
+    }
+</div>
+
+
+@code {
+    private string categoryFilter = "";
+    private List<Talk> filteredTalks = new List<Talk>();
+
+    protected override void OnInitialized()
+    {
+        filteredTalks = ScheduleService.GetTalks();
+    }
+
+    private void OnFilterInput(ChangeEventArgs e)
+    {
+        categoryFilter = e.Value.ToString();
+        filteredTalks = ScheduleService.GetTalks(categoryFilter);
+    }
+}
