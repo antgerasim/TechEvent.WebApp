@@ -1,19 +1,31 @@
 @using TechEvent.WebApp.Models
 
-<div class="talk-card">
-    <div class="talk-time">@Talk.StartTime.ToString("HH:mm") - @Talk.StartTime.Add(Talk.Duration).ToString("HH:mm")</div>
-    <div class="talk-details">
-        <h3>@Talk.Title</h3>
-        <p class="speakers">by @string.Join(", ", Talk.Speakers)</p>
-        <div class="categories">
-            @foreach (var category in Talk.Categories)
-            {
-                <span class="category">@category</span>
-            }
+@if (Talk.IsBreak)
+{
+    <div class="talk-card break">
+        <div class="talk-time">@Talk.StartTime.ToString("HH:mm") - @Talk.StartTime.Add(Talk.Duration).ToString("HH:mm")</div>
+        <div class="talk-details">
+            <h3>@Talk.Title</h3>
         </div>
-        <p class="description">@Talk.Description</p>
     </div>
-</div>
+}
+else
+{
+    <div class="talk-card">
+        <div class="talk-time">@Talk.StartTime.ToString("HH:mm") - @Talk.StartTime.Add(Talk.Duration).ToString("HH:mm")</div>
+        <div class="talk-details">
+            <h3>@Talk.Title</h3>
+            <p class="speakers">by @string.Join(", ", Talk.Speakers)</p>
+            <div class="categories">
+                @foreach (var category in Talk.Categories)
+                {
+                    <span class="category">@category</span>
+                }
+            </div>
+            <p class="description">@Talk.Description</p>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter]

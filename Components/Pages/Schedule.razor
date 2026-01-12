@@ -1,51 +1,128 @@
 @page "/schedule"
 @using TechEvent.WebApp.Models
 @using TechEvent.WebApp.Services
+@using System.Threading
+@using System.Threading.Tasks
 @inject ScheduleService ScheduleService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
 @rendermode InteractiveServer
+
 
 <h1>Event Schedule</h1>
 
 <div class="filter-container">
-    <input @oninput="OnFilterInput" placeholder="Filter by category..." />
+    <input id="filterInput" @oninput="OnFilterInput" placeholder="Filter by category..." />
 </div>
 
-<div class="schedule-container">
-    @if (filteredTalks.Count == 0)
-    {
-        <p>No talks found for the selected category.</p>
-    }
-    else
-    {
-        @foreach (var talk in filteredTalks)
+@if (availableCategories.Any())
+{
+    <div class="category-buttons mt-3 mb-3">
+        @foreach (var category in availableCategories)
         {
-            <TalkCard Talk="talk" />
-            @if (talk.StartTime.Hour == 12)
+            <button type="button" class="btn @(categoryFilter == category ? "btn-primary" : "btn-outline-primary") m-1"
+                @onclick="() => FilterByCategory(category)">
+                @category
+            </button>
+        }
+        <button type="button" class="btn btn-outline-secondary m-1" @onclick="ClearFilter">Clear All</button>
+    </div>
+}
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="schedule-container">
+        @if (filteredTalks.Count == 0)
+        {
+            <p>No talks found for the selected category. Try adjusting your filter or <button type="button" class="btn btn-link"
+                    @onclick="ClearFilter">clearing it</button>.</p>
+        }
+        else
+        {
+            @foreach (var talk in filteredTalks)
             {
-                <div class="talk-card break">
-                    <div class="talk-time">13:20 - 14:20</div>
-                    <div class="talk-details">
-                        <h3>Lunch Break</h3>
-                    </div>
-                </div>
+                <TalkCard Talk="talk" />
             }
         }
-    }
-</div>
+    </div>
+}
 
 
 @code {
+    private bool isLoading = true;
     private string categoryFilter = "";
     private List<Talk> filteredTalks = new List<Talk>();
+    private List<string> availableCategories = new List<string>();
 
-    protected override void OnInitialized()
+    private Timer? _debounceTimer;
+    private CancellationTokenSource _debounceCancellationTokenSource = new();
+
+    protected override async Task OnInitializedAsync()
     {
-        filteredTalks = ScheduleService.GetTalks();
+        try
+        {
+            await Task.Delay(1000);
+            filteredTalks = ScheduleService.GetTalks();
+            availableCategories = ScheduleService.GetCategories();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("focusElement", "filterInput");
+        }
     }
 
     private void OnFilterInput(ChangeEventArgs e)
     {
         categoryFilter = e.Value.ToString();
+
+        _debounceCancellationTokenSource.Cancel();
+        _debounceCancellationTokenSource = new CancellationTokenSource();
+
+        _debounceTimer?.Dispose();
+
+        _debounceTimer = new System.Threading.Timer(async _ =>
+        {
+            try
+            {
+                if (_debounceCancellationTokenSource!.Token.IsCancellationRequested) return;
+
+                filteredTalks = ScheduleService.GetTalks(categoryFilter);
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore
+            }
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private void FilterByCategory(string category)
+    {
+        categoryFilter = category;
         filteredTalks = ScheduleService.GetTalks(categoryFilter);
+    }
+
+    private void ClearFilter()
+    {
+        categoryFilter = "";
+        filteredTalks = ScheduleService.GetTalks();
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+        _debounceCancellationTokenSource.Dispose();
     }
 }

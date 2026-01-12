@@ -42,6 +42,13 @@ namespace TechEvent.WebApp.Services
                 },
                 new Talk
                 {
+                    Title = "Lunch Break",
+                    IsBreak = true,
+                    Duration = TimeSpan.FromHours(1),
+                    StartTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 13, 20, 0)
+                },
+                new Talk
+                {
                     Title = "Building Cloud-Native Apps with ASP.NET Core",
                     Speakers = new List<string> { "Mary Williams" },
                     Categories = new List<string> { "ASP.NET Core", "Cloud", "Microservices" },
@@ -67,7 +74,7 @@ namespace TechEvent.WebApp.Services
                     Description = "An overview of building native mobile apps for iOS and Android with C# and .NET MAUI.",
                     StartTime = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 16, 40, 0)
                 }
-            };
+            }.OrderBy(t => t.StartTime).ToList();
         }
 
         public List<Talk> GetTalks(string categoryFilter = null)
@@ -77,7 +84,12 @@ namespace TechEvent.WebApp.Services
                 return _talks;
             }
 
-            return _talks.Where(t => t.Categories.Any(c => c.Contains(categoryFilter, StringComparison.OrdinalIgnoreCase))).ToList();
+            return _talks.Where(t => !t.IsBreak && t.Categories.Any(c => c.Contains(categoryFilter, StringComparison.OrdinalIgnoreCase))).ToList();
+        }
+
+        public List<string> GetCategories()
+        {
+            return _talks.Where(t => !t.IsBreak).SelectMany(t => t.Categories).Distinct().ToList();
         }
     }
 }
